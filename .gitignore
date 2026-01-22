@@ -8,6 +8,9 @@ trainers/FileHandler.py
 # trained models
 models/
 
+#detection predictions
+trainers/runs/
+
 __pycache__/
 .venv/
 .idea/
