@@ -1,0 +1,9 @@
+path: ./datasets/fields
+train: train/images
+val: val/images
+
+names:
+  0: field_name
+  1: field_date
+  2: field_age
+  3: field_payment

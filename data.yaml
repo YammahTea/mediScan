@@ -1,0 +1,10 @@
+path: ./datasets/stickers
+train: train/images
+val: val/images
+
+names:
+  0: hayaa
+  1: almaqased
+  2: hanan
+  3: amman
+  4: other

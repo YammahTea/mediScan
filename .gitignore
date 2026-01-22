@@ -1,0 +1,15 @@
+# stickers/scan sheets
+datasets/
+
+# just to name files:
+trainers/FileHandler.py
+*.pt
+
+# trained models
+models/
+
+__pycache__/
+.venv/
+.idea/
+
+Final_Medical_Report.xlsx
