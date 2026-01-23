@@ -20,6 +20,7 @@ OCR_CONFIDENCE_THRESHOLD = 0.4
 print("Loading models...")
 hunter_model = YOLO(HUNTER_MODEL_PATH)
 surgeon_model = YOLO(SURGEON_MODEL_PATH)
+
 # 2- Load ocr
 reader = easyocr.Reader(['en', 'ar'], gpu=True)
 

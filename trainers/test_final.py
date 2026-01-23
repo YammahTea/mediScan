@@ -1,8 +1,8 @@
 from ultralytics import YOLO
 import os
 
-# 1- Load the model from train4 (my best model so far)
-model_path = '../models/detect/train4/weights/best.pt'
+# 1- Load the model from train1 (my best model so far)
+model_path = '../models/detect/train1/weights/best.pt'
 
 if not os.path.exists(model_path):
     print("Didn't find the model file")
