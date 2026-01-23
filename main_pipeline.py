@@ -10,6 +10,7 @@ from OCR import clean_text, clean_age, get_best_ocr
 """ CONFIG """
 HUNTER_MODEL_PATH = 'models/detect/train1/weights/best.pt'
 SURGEON_MODEL_PATH = 'models/surgeon/train_v1/weights/best.pt'
+
 # test path to scan sheets (TO DO: take folder path from user via frontend)
 INPUT_FOLDER = r"datasets/scan_sheets_test"
 OUTPUT_EXCEL = "Final_Medical_Report.xlsx"
