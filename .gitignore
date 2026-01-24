@@ -16,3 +16,7 @@ __pycache__/
 .idea/
 
 Final_Medical_Report.xlsx
+
+# testing files
+main_pipeline.py
+OCR.py
