@@ -14,7 +14,7 @@ SURGEON_MODEL_PATH = 'models/surgeon/train_v1/weights/best.pt'
 # test path to scan sheets (TO DO: take folder path from user via frontend)
 INPUT_FOLDER = r"datasets/scan_sheets_test"
 OUTPUT_EXCEL = "Final_Medical_Report.xlsx"
-OCR_CONFIDENCE_THRESHOLD = 0.4
+OCR_CONFIDENCE_THRESHOLD = 0.3
 
 """ Model loading and OCR """
 # 1- Load models
@@ -68,7 +68,7 @@ for filename in image_files:
             "Sticker image": f'=HYPERLINK("{os.path.abspath(image_path)}", "View Sheet")',
             "Hospital Name": hospital_name,
             "Name": "-",
-            "Date": "-",
+            "Entrance Date": "-",
             "Age": "-",
             "Payment": "-"
         }
@@ -93,7 +93,7 @@ for filename in image_files:
             if class_name == "field_name":
                 patient_info["Name"] = final_value
             elif class_name == "field_date":
-                patient_info["Date"] = final_value
+                patient_info["Entrance Date"] = final_value
             elif class_name == "field_age":
                 patient_info["Age"] = clean_age(final_value)
             elif class_name == "field_payment":
@@ -106,7 +106,7 @@ print("\nSaving Final Report...")
 if final_data:
     df = pd.DataFrame(final_data)
     # Reorder columns
-    cols = ["File Name", "Sticker image", "Hospital Name", "Name", "Date", "Age", "Payment"]
+    cols = ["File Name", "Sticker image", "Hospital Name", "Name", "Entrance Date", "Age", "Payment"]
     # Only keep columns that actually exist in the dataframe to prevent errors
     cols = [c for c in cols if c in df.columns]
     df = df[cols]

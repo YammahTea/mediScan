@@ -1,7 +1,6 @@
-import easyocr
+import datetime
 import cv2
 import re
-import numpy as np
 
 # helper functions
 def preprocess_image(img):
@@ -40,15 +39,36 @@ def clean_text(text):
 
 def clean_age(text):
   """
-  Cleans the age field in the sticker to a standard format
+    1- Tries to find a Year (19xx or 20xx) then calculates Age
+    2- If no year, looks for a simple number (e.g., "76 Years")
   """
   if not text: return "-"
 
-  # If it sees "Years", "Months", just keep the first number
-  # Example: "93 Years 8 Months" -> "93"
-  match = re.search(r'\d+', text)
-  if match:
-    return match.group(0)
+  text = text.strip()
+
+  # 1- find a 4 digit year and calculate age (date of birth)
+  year_match = re.search(r'(19|20)\d{2}', text)
+
+  if year_match:
+    birth_year = int(year_match.group(0))
+    current_year = datetime.datetime.now().year
+
+    age = current_year - birth_year
+
+    if 0 <= age <= 120:
+      return str(age)
+
+  # 2- find a 2-digit number, actual age and not DOB
+  # If it sees "Years", "Months", it keeps the first number
+
+  num_match = re.search(r'\d+', text)
+
+  if num_match:
+    value = int(num_match.group(0))
+
+    if value > 10:
+      return str(value)
+
   return "-"
 
 def get_best_ocr(reader, crop_img):
