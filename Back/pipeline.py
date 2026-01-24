@@ -29,7 +29,7 @@ async def load_models():
   return hunter, surgeon, reader
 
 
-def process_sheet(image, hunter, surgeon, reader):
+def process_sheet(image, hunter, surgeon, reader, filename):
   final_data = []
   sheet = image
 
@@ -51,7 +51,7 @@ def process_sheet(image, hunter, surgeon, reader):
     surgeon_result = surgeon(sticker_crop, verbose=False)
 
     patient_info = {
-      "File Name": "Not implemented yet",
+      "File Name": filename,
       "Sticker image": "Not implemented yet",
       "Hospital Name": hospital_name,
       "Name": "-",

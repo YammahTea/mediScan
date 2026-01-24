@@ -43,7 +43,11 @@ async def upload_sheet(
   surgeon = app.state.surgeon_model
   reader = app.state.reader
 
-  result = process_sheet(image_array, hunter, surgeon, reader)
+  result = process_sheet(image=image_array,
+                         hunter=hunter,
+                         surgeon=surgeon,
+                         reader=reader,
+                         filename=image.filename)
 
   if result:
     return save_data(result)
