@@ -18,5 +18,5 @@ __pycache__/
 Final_Medical_Report.xlsx
 
 # testing files
-main_pipeline.py
-OCR.py
+/main_pipeline.py
+/OCR.py
