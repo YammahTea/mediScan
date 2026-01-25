@@ -7,6 +7,7 @@ import easyocr
 from io import BytesIO
 import pandas as pd
 import cv2
+import xlsxwriter
 
 
 # Modules
@@ -48,11 +49,17 @@ def process_sheet(image, hunter, surgeon, reader, filename):
     if sticker_crop.size == 0:
       continue
 
+    # Save cropped sticker
+    # convert the numpy array into PNG formatted byte string
+    success, encoded_image = cv2.imencode('.png', sticker_crop)
+    sticker_bytes = encoded_image.tobytes() if success else None
+
     surgeon_result = surgeon(sticker_crop, verbose=False)
 
     patient_info = {
       "File Name": filename,
       "Sticker image": "Not implemented yet",
+      "image_data": sticker_bytes, # this temp, used to convert the image_data into an image
       "Hospital Name": hospital_name,
       "Name": "-",
       "Entrance Date": "-",
@@ -61,6 +68,12 @@ def process_sheet(image, hunter, surgeon, reader, filename):
     }
 
     names_map = surgeon.names
+
+    # special case check
+    if hospital_name == "amman":
+      detected_classes = [names_map[int(box.cls[0])] for box in surgeon_result[0].boxes]
+      if "field_payment" not in detected_classes:
+        patient_info["Payment"] = "نقدي"
 
     for box in surgeon_result[0].boxes:
       class_id = int(box.cls[0])
@@ -92,22 +105,91 @@ def process_sheet(image, hunter, surgeon, reader, filename):
 
 
 def save_data(patient_data):
-
+  """
+  1- Convert the received dict into dataframe
+  2- Create temp df
+  3- Write patient data into an excel sheet
+  4- Insert images into the created excel sheet
+  """
   if not patient_data:
     raise HTTPException(status_code=502, detail="Couldn't extract data from stickers")
 
+  # 1- create df
   df = pd.DataFrame(patient_data)
-  cols = ["File Name", "Sticker image", "Hospital Name", "Name", "Entrance Date", "Age", "Payment"]
-  cols = [c for c in cols if c in df.columns]
-  df = df[cols]
 
+  # 2- temp df for writing text (without the "image_data")
+  # columns to keep
+  display_cols = ["File Name", "Sticker image", "Hospital Name", "Name", "Entrance Date", "Age", "Payment"]
+  df_export = df[ [c for c in display_cols if c in df.columns] ]
+
+  # 3- write patient_data into the excel sheet
   # in memory buffer
-  buffer = BytesIO()
-  df.to_excel(buffer, index=False, engine='openpyxl')
-  buffer.seek(0)
+  output = BytesIO()
+
+  with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+
+    df_export.to_excel(writer, index=False, sheet_name="Sheet1")
+
+    # 4- insert images into the excel sheet "Sheet1"
+
+    # Get the xlsxwriter objects that pandas is using under the hood
+    workbook = writer.book
+    worksheet = writer.sheets['Sheet1']
+
+    # EXTRA, this is just to have all the columns' width fitted nicely
+
+    # Col A: File name
+    worksheet.set_column(0, 0, 10)
+
+    # Col B: Sticker image
+    worksheet.set_column(1, 1, 43)
+
+    # Col C: Hospital name
+    worksheet.set_column(2, 2, 10)
+
+    # Col D: Name
+    worksheet.set_column(3, 3, 30)
+
+    # Col E: Entrance date
+    worksheet.set_column(4, 4, 15)
+
+    # Col F: Age
+    worksheet.set_column(5, 5, 5)
+
+    # Col G: Payment
+    worksheet.set_column(6, 6, 20)
+
+
+    # IN the original df to get image_data
+    for i, row_data in df.iterrows():
+      image_bytes = row_data.get('image_data')
+
+      if image_bytes:
+
+        # calculate excel row
+        excel_row = i + 1 # note: row 0 is header
+
+        worksheet.set_row(excel_row, 100) # current row height = 100
+
+        # insert the image
+        image_stream = BytesIO(image_bytes)
+
+        worksheet.embed_image(
+          excel_row,
+          1, # Sticker image column
+          "sticker.png", # Dummy file name
+          {
+            'image_data': image_stream,
+            'x_scale': 0.5,
+            'y_scale': 0.5,
+            'object_position': 1
+          }
+        )
+
+  output.seek(0)
 
   return StreamingResponse(
-    buffer,
+    output,
     media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     headers={"Content-Disposition": "attachment; filename=patient_data.xlsx"}
   )
