@@ -11,7 +11,7 @@ import xlsxwriter
 
 
 # Modules
-from Back.ocr import get_best_ocr, clean_age, clean_text
+from Back.ocr import *
 
 HUNTER_MODEL_PATH = './models/detect/train1/weights/best.pt'
 SURGEON_MODEL_PATH = './models/surgeon/train_v1/weights/best.pt'
@@ -60,7 +60,7 @@ def process_sheet(image, hunter, surgeon, reader, filename):
       "File Name": filename,
       "Sticker image": "Not implemented yet",
       "image_data": sticker_bytes, # this temp, used to convert the image_data into an image
-      "Hospital Name": hospital_name,
+      "Hospital Name": hospital_name.title(),
       "Name": "-",
       "Entrance Date": "-",
       "Age": "-",
@@ -91,12 +91,15 @@ def process_sheet(image, hunter, surgeon, reader, filename):
 
       if class_name == "field_name":
         patient_info["Name"] = final_value
+
       elif class_name == "field_date":
-        patient_info["Entrance Date"] = final_value
+        patient_info["Entrance Date"] = standardize_date(final_value)
+
       elif class_name == "field_age":
         patient_info["Age"] = clean_age(final_value)
+
       elif class_name == "field_payment":
-        patient_info["Payment"] = final_value
+        patient_info["Payment"] = clean_payment(final_value)
 
     final_data.append(patient_info)
 

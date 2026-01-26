@@ -1,3 +1,4 @@
+from difflib import SequenceMatcher
 import datetime
 import cv2
 import re
@@ -5,10 +6,10 @@ import re
 # helper functions
 def preprocess_image(img):
   """
-  Magic Filter: Makes text pop out for better OCR.
+   Makes text pop out for better OCR.
   1- Grayscale
-  2- Upscale (2x)
-  3= Threshold (Black text on White bg)
+  2- Upscale
+  3- Threshold (Black text on White bg)
   """
   # Convert to gray
   gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -23,8 +24,7 @@ def preprocess_image(img):
 
 def clean_text(text):
   """
-  Cleans up OCR mess
-  Example: "Name: Mike" -> "Mike"
+  Cleans up OCR mess from whitespaces + fixes typos in date
   """
   if not text:
     return "-"
@@ -36,6 +36,29 @@ def clean_text(text):
 
   return text
 
+def standardize_date(text):
+  """
+  Makes all dates into YYYY/MM/DD format
+  """
+
+  if not text or len(text) < 0: return "-"
+
+  # normalize separators
+  text = text.replace('.', '/').replace('-', '/')
+
+  parts = text.split('/')
+  if len(parts) != 3: return text
+
+  YY, MM, DD = parts
+
+  if len(YY) == 4:
+    return f"{YY}/{MM}/{DD}" # already in format
+
+  # the day part is the year part, eg "27/12/2025"
+  if len(DD) == 4:
+    return f"{DD}/{MM}/{YY}" # flip
+
+  return text
 
 def clean_age(text):
   """
@@ -71,10 +94,44 @@ def clean_age(text):
 
   return "-"
 
+def similar(a, b):
+  """
+  Returns a similarity score between 0 and 1
+  """
+  return SequenceMatcher(None, a, b).ratio()
+
+
+def clean_payment(text):
+
+  if not text: return "-"
+
+  text_clean = text.strip()
+
+  # Target words to match
+  target_moh = "وزارة الصحة"
+  target_personal = "شخصي"
+
+  # check similarity
+  # ministry of health
+  if similar(text_clean, target_moh) > 0.6 or "وزارة" in text_clean:
+    return target_moh
+
+  # cash
+  if similar(text_clean, target_personal) > 0.7 or "شخص" in text_clean:
+    return "نقدي"
+
+  # special case check (ocr keeps making the same mistake)
+  if "nathealth" in text.lower():
+    return "Nathealth"
+
+  return text
+
 def get_best_ocr(reader, crop_img):
   """
-  Read text from the cropped image
-  :return: (text, confidence)
+  1- Process images (grays + upscales)
+  2- Read text from processed image
+  3- Detect the scanned language to switch between "LTR" and "RTL"
+  4- Return the scanned text with confidence level
   """
   # 1- process the image
   processed_img = preprocess_image(crop_img)
