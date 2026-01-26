@@ -11,13 +11,14 @@ def preprocess_image(img):
   2- Upscale
   3- Threshold (Black text on White bg)
   """
+
   # Convert to gray
   gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
-  # Upscale (Zoom in) - makes small text readable
+  # Upscale - makes small text readable
   scaled = cv2.resize(gray, None, fx=2, fy=2, interpolation=cv2.INTER_CUBIC)
 
-  # Threshold (Binarization) - strict black and white
+  # Threshold - strict black and white
   _, thresh = cv2.threshold(scaled, 120, 255, cv2.THRESH_BINARY)
 
   return thresh

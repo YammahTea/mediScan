@@ -4,6 +4,7 @@ from fastapi.responses import StreamingResponse
 from ultralytics import YOLO
 import easyocr
 
+from datetime import datetime
 from io import BytesIO
 import pandas as pd
 import cv2
@@ -191,8 +192,9 @@ def save_data(patient_data):
 
   output.seek(0)
 
+  filename_str = datetime.datetime.now().strftime("Report_%Y-%m-%d_%H-%M.xlsx")
   return StreamingResponse(
     output,
     media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    headers={"Content-Disposition": "attachment; filename=patient_data.xlsx"}
+    headers={"Content-Disposition": f"attachment; filename={filename_str}"}
   )
