@@ -131,7 +131,6 @@ def save_data(patient_data):
   output = BytesIO()
 
   with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-
     df_export.to_excel(writer, index=False, sheet_name="Sheet1")
 
     # 4- insert images into the excel sheet "Sheet1"
@@ -139,6 +138,9 @@ def save_data(patient_data):
     # Get the xlsxwriter objects that pandas is using under the hood
     workbook = writer.book
     worksheet = writer.sheets['Sheet1']
+
+    # left to right excel sheet
+    worksheet.right_to_left()
 
     # EXTRA, this is just to have all the columns' width fitted nicely
 
@@ -149,7 +151,7 @@ def save_data(patient_data):
     worksheet.set_column(1, 1, 43)
 
     # Col C: Hospital name
-    worksheet.set_column(2, 2, 10)
+    worksheet.set_column(2, 2, 20)
 
     # Col D: Name
     worksheet.set_column(3, 3, 30)
