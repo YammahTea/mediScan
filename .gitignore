@@ -1,5 +1,6 @@
 # stickers/scan sheets
 datasets/
+scribe_dataset/
 
 # just to name files:
 trainers/FileHandler.py
@@ -20,3 +21,7 @@ Final_Medical_Report.xlsx
 # testing files
 /main_pipeline.py
 /OCR.py
+
+# experimental model
+trainers/train_scribe.py
+scribe_data.yaml

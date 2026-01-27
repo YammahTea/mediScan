@@ -55,11 +55,27 @@ def process_sheet(image, hunter, surgeon, reader, filename):
     success, encoded_image = cv2.imencode('.png', sticker_crop)
     sticker_bytes = encoded_image.tobytes() if success else None
 
+    # case to handle the 'other' class by saving it as ghost patient but only saving the sticker image part
+    if hospital_name == "other":
+      print(f"Found 'other' sticker in {filename}, skipping surgeon model")
+      patient_info = {
+        "File Name": filename,
+        "Sticker image": "Manual Check Required", # just a placeholder text
+        "image_data": sticker_bytes,
+        "Hospital Name": hospital_name.title(),
+        "Name": "-",
+        "Entrance Date": "-",
+        "Age": "-",
+        "Payment": "-"
+      }
+      final_data.append(patient_info)
+      continue
+
     surgeon_result = surgeon(sticker_crop, verbose=False)
 
     patient_info = {
       "File Name": filename,
-      "Sticker image": "Not implemented yet",
+      "Sticker image": "Not available",
       "image_data": sticker_bytes, # this temp, used to convert the image_data into an image
       "Hospital Name": hospital_name.title(),
       "Name": "-",
@@ -91,6 +107,10 @@ def process_sheet(image, hunter, surgeon, reader, filename):
         final_value = clean_text(text)
 
       if class_name == "field_name":
+        # the ocr model sometimes confuses the name field by saying "nathealth" instead, it's an insurance, not a name
+        if "nathealth" in final_value.lower() or "nat" in final_value.lower():
+          continue
+
         patient_info["Name"] = final_value
 
       elif class_name == "field_date":
