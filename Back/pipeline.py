@@ -90,7 +90,7 @@ def process_sheet(image, hunter, surgeon, reader, filename):
     if hospital_name == "amman":
       detected_classes = [names_map[int(box.cls[0])] for box in surgeon_result[0].boxes]
       if "field_payment" not in detected_classes:
-        patient_info["Payment"] = "نقدي"
+        patient_info["Payment"] = "Cash"
 
     for box in surgeon_result[0].boxes:
       class_id = int(box.cls[0])

@@ -50,7 +50,11 @@ def standardize_date(text):
   parts = text.split('/')
   if len(parts) != 3: return text
 
+
   YY, MM, DD = parts
+
+  if len(MM) > 2: # means an extra space was read between numbers (the ocr keeps seeing an extra space when reading the month part)
+    MM = MM.replace(" ", "")
 
   if len(YY) == 4:
     return f"{YY}/{MM}/{DD}" # already in format
@@ -105,27 +109,37 @@ def similar(a, b):
 def clean_payment(text):
 
   if not text: return "-"
-
   text_clean = text.strip()
+  text_lower = text.lower()
 
-  # Target words to match
-  target_moh = "وزارة الصحة"
-  target_personal = "شخصي"
+  # Format: (Return value, Target for similarity, Similarity threshold, [List of Keywords])
+  PAYMENT_RULES = [
+    # 1- Nathealth
+    ("Nathealth", "nathealth", 0.8, ["nat", "nathealth"]),
 
-  # check similarity
-  # ministry of health
-  if similar(text_clean, target_moh) > 0.6 or "وزارة" in text_clean:
-    return target_moh
+    # 2- Cash (Personal/Self)
+    ("Cash", "شخصي", 0.7, ["شخص", "self"]),
+    ("Cash", "نقدي", 0.7, ["نقد"]),
 
-  # cash
-  if similar(text_clean, target_personal) > 0.7 or "شخص" in text_clean:
-    return "نقدي"
+    # 3- Military insurance
+    ("الخدمات العسكرية", "الخدمات الطبية العسكرية الفلسطينية", 0.6, ["الفلسطينية"]),
 
-  # special case check (ocr keeps making the same mistake)
-  if "nathealth" in text.lower():
-    return "Nathealth"
+    # 4- MOH (Ministry of Health)
+    ("التأمين الصحي", "وزارة الصحة", 0.6, ["وزارة", "الصحة"]),
+    ("التأمين الصحي", "التامين الصحي", 0.8, ["التأمين"]),
+  ]
 
-  return text
+  for return_val, target_sim, threshold, keywords in PAYMENT_RULES:
+
+    # strict substring match (fast)
+    if any(k in text_lower for k in keywords):
+      return return_val
+
+    # similarity checking (slower)
+    if similar(text_clean, target_sim) > threshold:
+      return return_val
+
+  return text # default fallback
 
 def get_best_ocr(reader, crop_img):
   """

@@ -4,6 +4,9 @@ from typing import List
 import numpy as np
 import cv2
 
+from PIL import Image
+import pillow_heif
+
 # Modules
 from Back.pipeline import load_models, process_sheet, save_data
 
@@ -28,14 +31,14 @@ async def upload_sheet(
   1- Load models from state
   2- Check if provided images do not exceed the maximum number allowed
   3- Check if image is allowed
-  4- Process each image and store all data
+  4- Process each image and store all data (Read and Decode)
   5- Save data
   """
 
   if len(images) > MAX_IMAGES:
     raise HTTPException(status_code=422, detail=f"Maximum of {MAX_IMAGES} images is allowed!")
 
-  ALLOWED_TYPES = ["image/jpeg", "image/png", "image/jpg"]
+  ALLOWED_TYPES = ["image/jpeg", "image/png", "image/jpg", "image/dng", "image/heic", "image/heif"]
 
   all_patient_data = []
 
@@ -45,21 +48,47 @@ async def upload_sheet(
 
   for image in images:
 
-    if image.content_type not in ALLOWED_TYPES:
+    if image.content_type not in ALLOWED_TYPES and not image.filename.lower().endswith(('.heic', '.heif')):
       # skip instead of crashing everything
       print(f"Skipping {image.filename}: Invalid type {image.content_type}")
       continue
 
     # read and decode
-    # have to convert image to numpy array or it will give an error
-    contents = await image.read() # filee bytes
-    np_array = np.frombuffer(contents, np.uint8) # converts the bytes to numpy array
-    image_array = cv2.imdecode(np_array, cv2.IMREAD_COLOR) # decode back into openCv
+    contents = await image.read()
+    image_array = None
 
-    if image_array is None:
-      print(f"Skipping {image.filename}: Could not decode the image")
+    try:
+      is_heic = (
+        image.content_type in ["image/heic", "image/heif"] or
+        image.filename.lower().endswith(('.heic', '.heif'))
+      )
+
+      if is_heic:
+        print(f"Processing HEIC/HEIF file: {image.filename}")
+        heif_file = pillow_heif.read_heif(contents)
+
+        # converts the heif image to a PIL image
+        pil_image = Image.frombytes(
+          heif_file.mode,
+          heif_file.size,
+          heif_file.data,
+          "raw",
+        )
+
+        # convert PIL image (RGB) to opencv (BGR)
+        np_image = np.array(pil_image)
+        image_array = cv2.cvtColor(np_image, cv2.COLOR_RGB2BGR)
+
+      else:
+        # normal images processing
+        np_array = np.frombuffer(contents, np.uint8)
+        image_array = cv2.imdecode(np_array, cv2.IMREAD_COLOR)
+
+    except Exception as e:
+      print(f"Failed to decode image {image.filename}, Error: {e}")
       continue
 
+    # process the image array
     try:
       sheet_result = process_sheet(
         image=image_array,
