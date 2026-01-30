@@ -30,6 +30,13 @@ async def load_models():
 
   return hunter, surgeon, reader
 
+hospital_map = {
+  "amman": "مستشفى عمان الجراحي",
+  "hayaa": "مستشفى الحياة",
+  "almqased": "مستشفى المقاصد",
+  "hanan": "مستشفى الحنان",
+  "other": "Other"
+}
 
 def process_sheet(image, hunter, surgeon, reader, filename):
   final_data = []
@@ -50,6 +57,9 @@ def process_sheet(image, hunter, surgeon, reader, filename):
     if sticker_crop.size == 0:
       continue
 
+    if sticker_box.conf[0] <= 0.3: # to handle low confidence predictions
+      hospital_name = "other"
+
     # Save cropped sticker
     # convert the numpy array into PNG formatted byte string
     success, encoded_image = cv2.imencode('.png', sticker_crop)
@@ -59,29 +69,39 @@ def process_sheet(image, hunter, surgeon, reader, filename):
     if hospital_name == "other":
       print(f"Found 'other' sticker in {filename}, skipping surgeon model")
       patient_info = {
-        "File Name": filename,
-        "Sticker image": "Manual Check Required", # just a placeholder text
-        "image_data": sticker_bytes,
-        "Hospital Name": hospital_name.title(),
-        "Name": "-",
-        "Entrance Date": "-",
+        "المريض": "-",
+        "تاريخ الدخول": "-",
+        "تاريخ الخروج": "-",
+        "ملاحظات": "-",
         "Age": "-",
-        "Payment": "-"
+        "المستشفى": hospital_map.get(hospital_name, "Other"),
+        "Payment": "-", # example: cash or insurance company
+        "diagnosis": "-",
+        "Expected Payment": "-", # expected amount to receive
+        "Sticker image": "Manual Check Required", # just a placeholder text
+        "File Name": filename,
+        "image_data": sticker_bytes,
       }
+
       final_data.append(patient_info)
       continue
 
     surgeon_result = surgeon(sticker_crop, verbose=False)
 
+    # this is temp, used to convert the image_data into an image
     patient_info = {
-      "File Name": filename,
-      "Sticker image": "Not available",
-      "image_data": sticker_bytes, # this temp, used to convert the image_data into an image
-      "Hospital Name": hospital_name.title(),
-      "Name": "-",
-      "Entrance Date": "-",
+      "المريض": "-",
+      "تاريخ الدخول": "-",
+      "تاريخ الخروج": "-",
+      "ملاحظات": "-",
       "Age": "-",
-      "Payment": "-"
+      "المستشفى": hospital_map.get(hospital_name, "Other"),
+      "Payment": "-", # example: cash or insurance company
+      "diagnosis": "-",
+      "Expected Payment": "-", # expected amount to receive
+      "Sticker image": "Not available",
+      "File Name": filename,
+      "image_data": sticker_bytes
     }
 
     names_map = surgeon.names
@@ -111,10 +131,10 @@ def process_sheet(image, hunter, surgeon, reader, filename):
         if "nathealth" in final_value.lower() or "nat" in final_value.lower():
           continue
 
-        patient_info["Name"] = final_value
+        patient_info["المريض"] = final_value
 
       elif class_name == "field_date":
-        patient_info["Entrance Date"] = standardize_date(final_value)
+        patient_info["تاريخ الدخول"] = standardize_date(final_value)
 
       elif class_name == "field_age":
         patient_info["Age"] = clean_age(final_value)
@@ -131,7 +151,7 @@ def process_sheet(image, hunter, surgeon, reader, filename):
 def save_data(patient_data):
   """
   1- Convert the received dict into dataframe
-  2- Create temp df
+  2- Create temp df based off the defined excel structure
   3- Write patient data into an excel sheet
   4- Insert images into the created excel sheet
   """
@@ -142,8 +162,27 @@ def save_data(patient_data):
   df = pd.DataFrame(patient_data)
 
   # 2- temp df for writing text (without the "image_data")
-  # columns to keep
-  display_cols = ["File Name", "Sticker image", "Hospital Name", "Name", "Entrance Date", "Age", "Payment"]
+  # excel sheet configuration
+  # format: ("Column name", column_width)
+
+  excel_structure = [
+    ("المريض", 30),
+    ("تاريخ الدخول", 15),
+    ("تاريخ الخروج", 15),
+    ("ملاحظات", 15),
+    ("Age", 5),
+    ("المستشفى", 20),
+    ("Payment", 20),
+    ("diagnosis", 25),
+    ("Expected Payment", 15),
+    ("Sticker image", 43),
+    ("File name", 10)
+  ]
+
+  # Columns' name based on the excel_structure
+  display_cols = [col[0] for col in excel_structure]
+
+  # Filtered df to match these columns
   df_export = df[ [c for c in display_cols if c in df.columns] ]
 
   # 3- write patient_data into the excel sheet
@@ -155,37 +194,18 @@ def save_data(patient_data):
 
     # 4- insert images into the excel sheet "Sheet1"
 
+    # worksheet configurations
     # Get the xlsxwriter objects that pandas is using under the hood
     workbook = writer.book
     worksheet = writer.sheets['Sheet1']
-
-    # left to right excel sheet
     worksheet.right_to_left()
 
     # EXTRA, this is just to have all the columns' width fitted nicely
-
-    # Col A: File name
-    worksheet.set_column(0, 0, 10)
-
-    # Col B: Sticker image
-    worksheet.set_column(1, 1, 43)
-
-    # Col C: Hospital name
-    worksheet.set_column(2, 2, 20)
-
-    # Col D: Name
-    worksheet.set_column(3, 3, 30)
-
-    # Col E: Entrance date
-    worksheet.set_column(4, 4, 15)
-
-    # Col F: Age
-    worksheet.set_column(5, 5, 5)
-
-    # Col G: Payment
-    worksheet.set_column(6, 6, 20)
+    for i, (col_name, width) in enumerate(excel_structure):
+      worksheet.set_column(i, i, width)
 
 
+    img_col_index = display_cols.index("Sticker image")
     # IN the original df to get image_data
     for i, row_data in df.iterrows():
       image_bytes = row_data.get('image_data')
@@ -202,7 +222,7 @@ def save_data(patient_data):
 
         worksheet.embed_image(
           excel_row,
-          1, # Sticker image column
+          img_col_index, # Sticker image column
           "sticker.png", # Dummy file name
           {
             'image_data': image_stream,
