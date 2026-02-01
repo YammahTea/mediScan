@@ -1,0 +1,101 @@
+@import "tailwindcss";
+
+.form {
+    background-color: #fff;
+    box-shadow: 0 10px 60px rgb(218, 229, 255);
+    border: 1px solid rgb(159, 159, 160);
+    border-radius: 20px;
+    padding: 2rem .7rem .7rem .7rem;
+    text-align: center;
+    font-size: 1.125rem;
+    max-width: 380px;
+}
+
+.form-title {
+    color: #000000;
+    font-size: 1.8rem;
+    font-weight: 500;
+}
+
+.form-paragraph {
+    margin-top: 10px;
+    font-size: 0.9375rem;
+    color: rgb(105, 105, 105);
+}
+
+.drop-container {
+    background-color: #fafbff;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 2.5rem 1.5rem;
+    margin-top: 2.1875rem;
+    border-radius: 12px;
+    border: 2px dashed rgb(100, 149, 237);
+    cursor: pointer;
+    transition: all .3s ease-in-out;
+}
+
+.drop-container:hover {
+    background: rgba(100, 149, 237, 0.05);
+    border-color: rgb(65, 105, 225);
+    box-shadow: 0 4px 12px rgba(100, 149, 237, 0.15);
+}
+
+.drop-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    pointer-events: none;
+}
+
+.file-icon {
+    width: 64px;
+    height: 64px;
+    margin-bottom: 8px;
+    opacity: 0.9;
+}
+
+.drop-title {
+    color: #555;
+    font-size: 1rem;
+    font-weight: 600;
+    text-align: center;
+}
+
+.drop-subtitle {
+    color: #888;
+    font-size: 0.9rem;
+    margin: 4px 0;
+}
+
+.browse-button {
+    pointer-events: auto;
+    background: #0d2559;
+    color: #fff;
+    border: none;
+    padding: 10px 24px;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background .2s ease-in-out;
+    margin-top: 6px;
+}
+
+.browse-button:hover {
+    background: #0d45a5;
+}
+
+.file-status {
+    color: #999;
+    font-size: 0.85rem;
+    margin-top: 8px;
+}
+
+#file-input {
+    display: none;
+}

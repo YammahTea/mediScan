@@ -1,5 +1,7 @@
 from fastapi import FastAPI, HTTPException, UploadFile, File
+from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
+
 from typing import List
 import numpy as np
 import cv2
@@ -21,6 +23,18 @@ async def lifespan(app: FastAPI):
   yield
 
 app = FastAPI(lifespan=lifespan)
+origins = [
+  "http://localhost:5173" # for local testing (yes i will add the frontend url when i host it)
+]
+
+app.add_middleware(
+  CORSMiddleware,
+  allow_origins=origins,
+  allow_credentials=True,
+  allow_methods=["*"],
+  allow_headers=["*"],
+  expose_headers=["Content-Disposition"]
+)
 
 MAX_IMAGES = 5
 @app.post("/upload")
@@ -34,7 +48,6 @@ async def upload_sheet(
   4- Process each image and store all data (Read and Decode)
   5- Save data
   """
-
   if len(images) > MAX_IMAGES:
     raise HTTPException(status_code=422, detail=f"Maximum of {MAX_IMAGES} images is allowed!")
 
