@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Request, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, status, Request, UploadFile, File
 from fastapi.security import OAuth2PasswordRequestForm
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -39,7 +39,7 @@ async def upload_sheet(
 
 
   if len(images) > MAX_IMAGES:
-    raise HTTPException(status_code=422, detail=f"Maximum of {MAX_IMAGES} images is allowed!")
+    raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=f"Maximum of {MAX_IMAGES} images is allowed!")
   
   ALLOWED_TYPES = ["image/jpeg", "image/png", "image/jpg", "image/dng", "image/heic", "image/heif"]
   
@@ -111,4 +111,4 @@ async def upload_sheet(
     return save_data(all_patient_data)
   
   else:
-    raise HTTPException(status_code=500, detail="No patients found in any of the uploaded images")
+    raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="No patients found in any of the uploaded images")

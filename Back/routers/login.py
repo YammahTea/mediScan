@@ -40,14 +40,14 @@ async def login(
 # 2- check if user doesn't exist or if the password doesn't match
   if not user or not verify_password(form_data.password, user.hashed_password):
     raise HTTPException(
-      status_code=401,
+      status_code=status.HTTP_401_UNAUTHORIZED,
       detail="Incorrect username or password",
       headers={"WWW-Authenticate": "Bearer"}
     )
   
   # 3- check if the user is active
   if not user.is_active:
-    raise HTTPException(status_code=400, detail="The account is deactivated")
+    raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="The account is deactivated")
   
   # 4- create the token
   access_token = create_access_token(

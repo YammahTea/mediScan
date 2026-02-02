@@ -17,14 +17,14 @@ async def get_current_user(
         db: AsyncSession = Depends(get_db)
 ):
   credentials_exception = HTTPException(
-    status_code=401,
+    status_code=status.HTTP_401_UNAUTHORIZED,
     detail="Could not validate credentials",
     headers={"WWW-Authenticate": "Bearer"},
   )
   
   # 1- Check if token is blacklisted
   if await is_token_blacklisted(token, db):
-    raise HTTPException(status_code=401, detail="Token is invalid (Logged out)")
+    raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is invalid (Logged out)")
   
   try:
     # 2- Decode token
@@ -46,6 +46,6 @@ async def get_current_user(
   
   # 4- check if the user is active
   if not user.is_active:
-    raise HTTPException(status_code=400, detail="Inactive user")
+    raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Inactive user")
   
   return user
