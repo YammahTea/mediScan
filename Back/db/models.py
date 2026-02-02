@@ -11,11 +11,17 @@ class User(Base):
 
   __tablename__ = 'users'
 
-  # user id
+  # User ID
   id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
   
   # Username
   username: Mapped[str] = mapped_column(String(32), unique=True, index=True, nullable=False)
+  
+  # User email
+  email: Mapped[str] = mapped_column(String(320), unique=True, index=True, nullable=False)
+  
+  # For future use
+  is_verified: Mapped[bool] = mapped_column(Boolean, unique= False, default=False)
   
   # User password
   hashed_password: Mapped[str] = mapped_column(String, nullable=False)

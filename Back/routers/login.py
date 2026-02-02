@@ -2,7 +2,6 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from datetime import datetime
 import jwt
 
 # Modules
@@ -25,12 +24,20 @@ async def login(
   and then checks if the account is active and then creates an access token
   """
   
-  # 1- Find user in db
-  query = select(User).where(User.username == form_data.username)
-  result = await db.execute(query)
-  user = result.scalars().first()
+  # 1- Find user in db (by email or username)
   
-  # 2- check if user doesn't exist or if the password doesn't match
+  if "@" in form_data.username: # simple check because i am the one who will make the user account :)
+    query = select(User).where(User.email == form_data.username)
+    result = await db.execute(query)
+    user = result.scalars().first()
+    
+  else:
+    query = select(User).where(User.username == form_data.username)
+    result = await db.execute(query)
+    user = result.scalars().first()
+
+
+# 2- check if user doesn't exist or if the password doesn't match
   if not user or not verify_password(form_data.password, user.hashed_password):
     raise HTTPException(
       status_code=401,
