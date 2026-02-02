@@ -1,13 +1,14 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Response, Request
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import  selectinload
 from sqlalchemy import select
 import jwt
 
 # Modules
 from Back.db.database import get_db
-from Back.db.models import User
-from Back.services.auth import verify_password, create_access_token, add_token_to_blacklist, SECRET_KEY, ALGORITHM
+from Back.db.models import User, RefreshToken
+from Back.services.auth import *
 from Back.dependencies import get_current_user, oauth2_scheme
 
 router = APIRouter(
@@ -16,8 +17,9 @@ router = APIRouter(
 
 @router.post("/login")
 async def login(
+        response: Response,
         form_data: OAuth2PasswordRequestForm = Depends(),
-        db: AsyncSession = Depends(get_db)
+        db: AsyncSession = Depends(get_db),
 ):
   """
   Finds user in db and check if it is a valid user with the correct password
@@ -49,9 +51,21 @@ async def login(
   if not user.is_active:
     raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="The account is deactivated")
   
-  # 4- create the token
+  # 4- create the access token + refresh token
   access_token = create_access_token(
     data={"sub": user.username}
+  )
+  
+  refresh_token = await create_refresh_token(user.id, db)
+  
+  response.set_cookie(
+    key="refresh_token",
+    value=refresh_token,
+    httponly=True,
+    secure=True,
+    samesite="lax",
+    max_age=AUTH_REFRESH_TOKEN_EXPIRE_DAYS * 86400,
+    path="/",
   )
   
   return {"access_token": access_token, "token_type": "bearer"}
@@ -59,9 +73,9 @@ async def login(
 
 @router.post("/logout")
 async def logout(
-  user: User = Depends(get_current_user), # to avoid errors if the user is not actually logged in
-  token: str = Depends(oauth2_scheme),
-  db: AsyncSession = Depends(get_db)
+        user: User = Depends(get_current_user), # to avoid errors if the user is not actually logged in
+        token: str = Depends(oauth2_scheme),
+        db: AsyncSession = Depends(get_db)
 ):
   
   try:
@@ -76,3 +90,62 @@ async def logout(
     pass
   
   return {"message": "Successfully logged out"}
+
+
+@router.post("/refresh")
+async def refresh_token(
+        request: Request,
+        response: Response,
+        db: AsyncSession = Depends(get_db)
+):
+  
+  # 1- grab the cookie
+  refresh_token_raw = request.cookies.get("refresh_token")
+  if not refresh_token_raw:
+    raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Refresh token is missing")
+  
+  # 2- hash the refresh token
+  hashed_token = hash_token(refresh_token_raw)
+  
+  # 3- Check if the hashed token exists in the db and is associated with its user
+  # selectinload is faster than the normal join (look it up bruh)
+  query = (
+    select(RefreshToken)
+    .where(RefreshToken.hashed_token == hashed_token)
+    .options(selectinload(RefreshToken.user))
+  )
+  
+  result = await db.execute(query)
+  stored_token: RefreshToken = result.scalars().first()
+  
+  # 4- validate the result
+  if not stored_token:
+    raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token")
+  
+  if stored_token.revoked:
+    raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is revoked")
+  
+  # 5- Get the user
+  user = stored_token.user
+  if not user or not user.is_active:
+    raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found or inactive")
+  
+  # 6- create new access token
+  new_access_token = create_access_token(data={"sub": user.username})
+  
+  # 6.5- remove the old refresh token (Rotation)
+  stored_token.revoked = True
+  new_refresh_token = await create_refresh_token(user.id, db)
+  
+  # 7- set the cookie
+  response.set_cookie(
+    key="refresh_token",
+    value=new_refresh_token,
+    httponly=True,
+    secure=True, # make it false if testing localy
+    samesite="lax",
+    max_age=AUTH_REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60, # days to seconds
+    path="/"
+  )
+  
+  return {"access_token": new_access_token, "token_type": "bearer"}

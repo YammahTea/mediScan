@@ -1,6 +1,6 @@
 import uuid
-from sqlalchemy import Uuid, String, Boolean, DateTime
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from sqlalchemy import Uuid, String, Boolean, DateTime, ForeignKey
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from datetime import datetime, timezone
 
 
@@ -8,7 +8,6 @@ class Base(DeclarativeBase):
   pass
 
 class User(Base):
-
   __tablename__ = 'users'
 
   # User ID
@@ -33,8 +32,26 @@ class User(Base):
 class BlacklistedToken(Base):
   __tablename__ = 'token_blacklist'
   
+  # token id
   id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
   
   token: Mapped[str] = mapped_column(String, index=True, unique=True)
-  
   expires_at: Mapped[datetime] = mapped_column(DateTime, default= lambda : datetime.now(timezone.utc).replace(tzinfo=None))
+  
+  
+class RefreshToken(Base):
+  __tablename__ = "refresh_token"
+  
+  # token id
+  id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
+  
+  hashed_token: Mapped[str] = mapped_column(String, index=True, unique=True)
+  expires_at: Mapped[datetime] = mapped_column(DateTime, default= lambda : datetime.now(timezone.utc).replace(tzinfo=None))
+  
+  # to ban tokens
+  revoked: Mapped[bool] = mapped_column(Boolean, unique=False, default=False)
+  
+  # user id associated with the token
+  user_id: Mapped[uuid.UUID] = mapped_column(Uuid, ForeignKey("users.id"), nullable=False)
+  
+  user: Mapped["User"] = relationship()
