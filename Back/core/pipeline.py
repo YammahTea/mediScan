@@ -7,12 +7,9 @@ import easyocr
 from datetime import datetime
 from io import BytesIO
 import pandas as pd
-import cv2
-import xlsxwriter
-
 
 # Modules
-from Back.ocr import *
+from Back.core.ocr import *
 
 HUNTER_MODEL_PATH = './models/detect/train1/weights/best.pt'
 SURGEON_MODEL_PATH = './models/surgeon/train_v1/weights/best.pt'

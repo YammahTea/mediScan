@@ -25,3 +25,11 @@ Final_Medical_Report.xlsx
 # experimental model
 trainers/train_scribe.py
 scribe_data.yaml
+
+.env
+
+# to create admin user
+create_admin.py
+
+# test db
+mediScan.db
