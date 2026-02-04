@@ -27,7 +27,12 @@ function LoginScreen() {
   };
 
   const handleContact = () => {
-    console.log("meow");
+    const email = "mahmoud.aldaoud.se@gmail.com"; // yes this is my email if u are reading this :)
+    
+    const subject = encodeURIComponent("Access request: MediScan");
+    const body = encodeURIComponent("Hello Developer, \n\nI am a doctor and would like to request access to the application.\n\nMy details:\nName:\nHospital/Clinic:\nExtra details(Optional):\n\n If you are not a doctor and would like a temporary access, you can still apply but please state your access reason");
+    
+    window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
   };
   
   const handleSubmit = (e) => {
@@ -72,7 +77,8 @@ function LoginScreen() {
                   <a href="https://github.com/YammahTea" className="register-link" target="_blank">
                     developer
                   </a>
-                  {' '}to gain access, only verified doctors can get an access account
+                  {' '}to gain access, only verified doctors can get an access account.
+                  {' '}If you are not a doctor, you can still ask for a temporary access account.
                 </>
               )
               : 'Glad to see you again Login to your account below.'

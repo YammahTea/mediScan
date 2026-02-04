@@ -1,17 +1,20 @@
 import { useState, useEffect } from "react";
 
+import LoaderModal from "../components/LoaderModal.jsx"
+
 import api from "../api/axios.js";
 import { useAuth } from '../context/AuthProvider';
 
 const Upload = () => {
   
-  const { token, logout } = useAuth();
+  const { logout } = useAuth();
   
   const [maxImagesCount, setMaxImagesCount] = useState(5);
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
   const [cooldownTimer, setCooldownTimer] = useState(0);
+  const [status, setStatus] = useState('idle');
 
   useEffect(() => {
     if (cooldownTimer > 0) {
@@ -32,11 +35,16 @@ const Upload = () => {
     }
 
     try {
-    
+      
+      setStatus("uploading");
+      // TO DO: SHOW THE BOOK ANIMATION ONLY IF UPLOADING
       const response = await api.post("/upload", formData, {'responseType': 'blob'});
 
       // no need for error checking in the response cuz axios does that automatically
-  
+      
+      setStatus("success");
+      // TO DO: SHOW A SUCCESS IN THE MODAL AFTER UPLOADING + ADD TIMEOUT
+      
       const blob = await response.data;
       let filename = 'patients.xlsx'; // fallback
 
@@ -51,15 +59,27 @@ const Upload = () => {
       const url = URL.createObjectURL(blob)
       const link = document.createElement("a");
       link.href = url;
-
+      
       link.setAttribute("download", filename);
       document.body.appendChild(link);
       link.click();
-
+      
+      // cleanup
+      
       // clean up memory
       link.remove();
       window.URL.revokeObjectURL(url);
 
+      // remove all files after successful scanning
+      // memory
+      selectedFiles.forEach(fileObj => {
+        if (fileObj.preview) {
+          URL.revokeObjectURL(fileObj.preview);
+        }
+      });
+      // ui
+      setSelectedFiles([]);
+      
     } catch (err) {
       const serverError = err.response?.data?.detail;
       setError(serverError || err.message);
@@ -154,13 +174,17 @@ const Upload = () => {
   const remainingSlots = maxImagesCount - selectedFiles.length;
 
   return (
+    
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-8">
+      
+      <LoaderModal isOpen={isSubmitting} />
+      
       <form className="bg-white shadow-[0_10px_60px_rgb(218,229,255)] border border-[rgb(159,159,160)] rounded-[20px] p-8 pb-6 text-center text-lg max-w-[380px] w-full">
         <h2 className="text-black text-[1.8rem] font-medium">Upload your file</h2>
         <p className="mt-2.5 text-[0.9375rem] text-[rgb(105,105,105)]">
           File should be an image (Max 5 images)
         </p>
-
+        
         {/* Drag and drop area*/}
         <label
           htmlFor="file-input"
@@ -186,7 +210,7 @@ const Upload = () => {
             disabled={selectedFiles.length >= maxImagesCount}
           />
         </label>
-
+        
         {/* Browse button and file status */}
         <div className="flex items-center gap-3 mt-4">
           <button
@@ -204,8 +228,8 @@ const Upload = () => {
             }
           </span>
         </div>
-
-
+        
+        
         {/* SCAN button */}
         <button
           type="button"
@@ -222,7 +246,7 @@ const Upload = () => {
             </p>
           </div>
         </button>
-
+        
         {/* Image previews */}
         {selectedFiles.length > 0 && (
           <div className="mt-6 grid grid-cols-5 gap-2">
@@ -261,8 +285,18 @@ const Upload = () => {
             ))}
           </div>
         )}
+      
       </form>
+      <button type="button"
+              className="underline text-red-600 cursor-pointer"
+              onClick={logout}
+      >
+        Logout
+      </button>
+    
     </div>
+    
+  
   );
 }
 
