@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 
 import LoaderModal from "../components/LoaderModal.jsx"
+import Toast from "../components/Toast.jsx"
 
 import api from "../api/axios.js";
 import { useAuth } from '../context/AuthProvider';
@@ -12,7 +13,10 @@ const Upload = () => {
   const [maxImagesCount, setMaxImagesCount] = useState(5);
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState(null);
+  
+  const [errorMessage, setErrorMessage] = useState(null); // message to display in the toast
+  const [messageType, setMessageType] = useState(null); // to determine if the message is a warn or error for the toast
+  
   const [cooldownTimer, setCooldownTimer] = useState(0);
   const [status, setStatus] = useState('idle');
 
@@ -27,7 +31,8 @@ const Upload = () => {
     if (isSubmitting) return;
 
     setIsSubmitting(true);
-    setError(false);
+    setErrorMessage(false);
+    setMessageType(null);
 
     const formData = new FormData();
     for (let i=0; i<selectedFiles.length; i++) {
@@ -82,11 +87,12 @@ const Upload = () => {
       
     } catch (err) {
       const serverError = err.response?.data?.detail;
-      setError(serverError || err.message);
+      
+      setErrorMessage(serverError || err.message);
+      setMessageType("error");
       
       setCooldownTimer(5);
-      console.error(err);
-
+      
     } finally {
       setIsSubmitting(false);
     }
@@ -103,7 +109,10 @@ const Upload = () => {
     // removes duplicate images
     const uniqueFiles = files.filter(file => {
       if (existingFilenames.includes(file.name)) {
-        console.warn(`Duplicate file ignored: ${file.name}`);
+        
+        setErrorMessage(`Duplicate file ignored: ${file.name}`);
+        setMessageType('warn')
+        
         return false;
       }
       return true;
@@ -112,7 +121,10 @@ const Upload = () => {
     // Checks if there are duplicate images uploaded
     if (uniqueFiles.length < files.length) {
       const duplicateCount = files.length - uniqueFiles.length;
-      alert(`${duplicateCount} duplicate file(s) ignored`);
+      
+      setErrorMessage(`${duplicateCount} duplicate file(s) ignored`);
+      setMessageType('warn')
+      
     }
 
     // Limit to 5 files
@@ -138,7 +150,9 @@ const Upload = () => {
           isValid: true
         };
       } catch (error) {
-        console.error(`Failed to create preview for ${file.name}:`, error);
+        setErrorMessage(`Failed to create preview for ${file.name}: ${error} `)
+        setMessageType('warn')
+        
         return {
           file: file,
           name: file.name,
@@ -170,6 +184,11 @@ const Upload = () => {
       return prev.filter((_, i) => i !== index);
     });
   };
+  
+  const clearErrorMessage = () => {
+     setErrorMessage(null);
+     setMessageType(null);
+  }
 
   const remainingSlots = maxImagesCount - selectedFiles.length;
 
@@ -179,7 +198,16 @@ const Upload = () => {
       
       <LoaderModal isOpen={isSubmitting} />
       
-      <form className="bg-white shadow-[0_10px_60px_rgb(218,229,255)] border border-[rgb(159,159,160)] rounded-[20px] p-8 pb-6 text-center text-lg max-w-[380px] w-full">
+      {errorMessage &&
+        <Toast
+        message="something"
+        onClose={clearErrorMessage}
+        type={messageType}
+        />
+      }
+        
+        
+        <form className="bg-white shadow-[0_10px_60px_rgb(218,229,255)] border border-[rgb(159,159,160)] rounded-[20px] p-8 pb-6 text-center text-lg max-w-[380px] w-full">
         <h2 className="text-black text-[1.8rem] font-medium">Upload your file</h2>
         <p className="mt-2.5 text-[0.9375rem] text-[rgb(105,105,105)]">
           File should be an image (Max 5 images)
@@ -293,7 +321,7 @@ const Upload = () => {
       >
         Logout
       </button>
-    
+      
     </div>
     
   
