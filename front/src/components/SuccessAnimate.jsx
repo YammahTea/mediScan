@@ -4,10 +4,9 @@ import React from "react";
 const SuccessAnimate = () => {
   return (
     <>
-      {/* The CSS Book animation,  you can find the animation on https://uiverse.io/Nawsome/curly-goose-54 */}
+      {/* The success animation, you can find it at https://uiverse.io/kyle1dev/average-skunk-3*/}
       <div className="modern-success-message">
         
-
         
         <div className="icon-wrapper">
           <svg
