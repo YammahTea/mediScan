@@ -18,20 +18,28 @@ const Upload = () => {
   const [messageType, setMessageType] = useState(null); // to determine if the message is a warn or error for the toast
   
   const [cooldownTimer, setCooldownTimer] = useState(0);
-  const [status, setStatus] = useState('idle');
+  
+  const [scanningStatus, setScanningStatus] = useState(null); // for the loader, to show either book animation or success
 
   useEffect(() => {
     if (cooldownTimer > 0) {
       const timerId = setTimeout(() => setCooldownTimer(c => c - 1), 1000);
       return () => clearTimeout(timerId);
     }
-  }, [cooldownTimer]);
+  }, [cooldownTimer]); // used to disable components (acts like an alarm) but cant pause code exec
+  
+  
+  
+  
+  
+  // helper function to pause code execution (With the await)
+  const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
   const handlePost = async () => {
     if (isSubmitting) return;
 
     setIsSubmitting(true);
-    setErrorMessage(false);
+    setErrorMessage(null);
     setMessageType(null);
 
     const formData = new FormData();
@@ -41,15 +49,14 @@ const Upload = () => {
 
     try {
       
-      setStatus("uploading");
-      // TO DO: SHOW THE BOOK ANIMATION ONLY IF UPLOADING
+      setScanningStatus("uploading"); // book animation in the modal
       const response = await api.post("/upload", formData, {'responseType': 'blob'});
 
       // no need for error checking in the response cuz axios does that automatically
       
-      setStatus("success");
-      // TO DO: SHOW A SUCCESS IN THE MODAL AFTER UPLOADING + ADD TIMEOUT
-      
+      setScanningStatus("success"); // success animation in the modal
+      await wait(2000);
+
       const blob = await response.data;
       let filename = 'patients.xlsx'; // fallback
 
@@ -85,6 +92,8 @@ const Upload = () => {
       // ui
       setSelectedFiles([]);
       
+      setCooldownTimer(5)
+      
     } catch (err) {
       const serverError = err.response?.data?.detail;
       
@@ -95,6 +104,7 @@ const Upload = () => {
       
     } finally {
       setIsSubmitting(false);
+      setScanningStatus(null);
     }
 
   };
@@ -196,11 +206,14 @@ const Upload = () => {
     
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-8">
       
-      <LoaderModal isOpen={isSubmitting} />
+      <LoaderModal
+        isOpen={isSubmitting}
+        status={scanningStatus}
+      />
       
       {errorMessage &&
         <Toast
-        message="something"
+        message={errorMessage}
         onClose={clearErrorMessage}
         type={messageType}
         />
