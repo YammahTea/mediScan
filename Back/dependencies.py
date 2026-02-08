@@ -10,13 +10,15 @@ import jwt
 from Back.db.database import get_db
 from Back.db.models import User
 from Back.services.auth import is_token_blacklisted, SECRET_KEY, ALGORITHM
+from Back.services.redis_client import get_redis
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 MAX_REQUESTS = 10
 
 async def get_current_user(
         token: str = Depends(oauth2_scheme),
-        db: AsyncSession = Depends(get_db)
+        db: AsyncSession = Depends(get_db),
+        redis = Depends(get_redis)
 ):
   credentials_exception = HTTPException(
     status_code=status.HTTP_401_UNAUTHORIZED,
@@ -25,7 +27,7 @@ async def get_current_user(
   )
   
   # 1- Check if token is blacklisted
-  if await is_token_blacklisted(token, db):
+  if await is_token_blacklisted(token, redis):
     raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token is invalid (Logged out)")
   
   try:

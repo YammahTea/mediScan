@@ -1,8 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Request, UploadFile, File
-from fastapi.security import OAuth2PasswordRequestForm
 
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
 
 from typing import List
 import numpy as np
@@ -12,10 +10,11 @@ from PIL import Image
 import pillow_heif
 
 # Modules
-from Back.core.pipeline import load_models, process_sheet, save_data
+from Back.core.pipeline import process_sheet, save_data
+from Back.services.rate_limiter import check_user_cooldown
 from Back.db.models import User
 from Back.db.database import get_db
-from Back.dependencies import get_current_user, oauth2_scheme, check_rate_limit
+from Back.dependencies import get_current_user, check_rate_limit
 
 router = APIRouter(
   tags=["Upload"]
@@ -26,6 +25,7 @@ MAX_IMAGES = 5
 async def upload_sheet(
         request: Request,
         user: User = Depends(get_current_user),
+        cooldown: bool = Depends(check_user_cooldown),
         images: List[UploadFile] = File(...),
         db: AsyncSession = Depends(get_db)
 ):

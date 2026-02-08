@@ -92,7 +92,7 @@ def process_sheet(image, hunter, surgeon, reader, filename):
         "Payment": "-", # example: cash or insurance company
         "Diagnosis": "-",
         "Expected Payment": "-", # expected amount to receive
-        "Sticker image": "", # just a placeholder text
+        "Sticker image": "",
         "File Name": filename,
         "image_data": sticker_bytes,
       }
@@ -234,7 +234,7 @@ def save_data(patient_data):
           image_stream.seek(0)
         
         
-        # explination:
+        # explanation:
         # insert_image instead of embed_image because in 'embed_image'
         # the image is literally the value of the cell
         # and i had to change this cuz the merge endpoint when copying the image, it couldnt see the value in the cell

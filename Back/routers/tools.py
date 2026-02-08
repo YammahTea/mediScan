@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, status, UploadFile, File
+from fastapi import APIRouter, HTTPException, status, UploadFile, File, Depends
 from fastapi.responses import StreamingResponse
 
 from io import BytesIO
@@ -9,7 +9,7 @@ from copy import copy, deepcopy
 import openpyxl
 
 # Modules
-from Back.core.pipeline import excel_structure
+from Back.services.rate_limiter import check_user_cooldown
 
 router = APIRouter(
   tags=["Tools"]
@@ -17,7 +17,8 @@ router = APIRouter(
 
 @router.post("/tools/merge")
 async def merge_files(
-        files: List[UploadFile] = File(...)
+        files: List[UploadFile] = File(...),
+        cooldown: bool = Depends(check_user_cooldown),
 ):
   
   """
@@ -139,5 +140,4 @@ async def merge_files(
     )
   
   except Exception as e:
-    print(f"Merge error: {e}")
     raise HTTPException(status_code=500, detail="Failed to merge files.")

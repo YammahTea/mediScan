@@ -38,15 +38,6 @@ class User(Base):
   is_unlimited: Mapped[bool] = mapped_column(Boolean, unique=False, default=False, nullable=True)
   
   
-class BlacklistedToken(Base):
-  __tablename__ = 'token_blacklist'
-  
-  # token id
-  id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
-  
-  token: Mapped[str] = mapped_column(String, index=True, unique=True)
-  expires_at: Mapped[datetime] = mapped_column(DateTime, default= lambda : datetime.now(timezone.utc).replace(tzinfo=None))
-  
   
 class RefreshToken(Base):
   __tablename__ = "refresh_token"

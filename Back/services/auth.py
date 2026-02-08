@@ -1,3 +1,5 @@
+from fastapi import Depends
+
 from passlib.context import CryptContext
 import jwt
 
@@ -11,7 +13,8 @@ from datetime import datetime, timedelta, timezone
 from dotenv import load_dotenv
 
 # Modules
-from Back.db.models import BlacklistedToken, RefreshToken
+from Back.db.models import RefreshToken
+from Back.services.redis_client import get_redis
 
 load_dotenv()
 
@@ -51,29 +54,26 @@ def create_access_token(data: dict):
   encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
   return encoded_jwt
 
-async def is_token_blacklisted(token: str, db: AsyncSession) -> bool:
+async def is_token_blacklisted(token: str, redis) -> bool:
   """
-  Returns true if the token is found in the sql blacklist
+  Returns true if the token is found in redis
   """
-  query = select(BlacklistedToken).where(BlacklistedToken.token == token)
-  result = await db.execute(query)
-  
-  return result.scalars().first() is not None
+  key = f"blacklist:token:{token}"
+  return await redis.exists(key)
 
-async def add_token_to_blacklist(token: str, expiration: float, db: AsyncSession):
+async def add_token_to_blacklist(token: str, expiration: float, redis):
   """
-  Adds the token to the sql blacklist with its expiration time
+  Adds the token to redis blacklist
+  it will delete it automatically when time expires
   """
   
-  # convert timestamp to a datetime obj
-  # i use utc in the model's logic
-  expires_at_dt = datetime.fromtimestamp(expiration, timezone.utc).replace(tzinfo=None)
+  now = datetime.now(timezone.utc).timestamp()
+  time_left = int(expiration - now)
   
-  new_entry = BlacklistedToken(token=token, expires_at=expires_at_dt)
-  
-  db.add(new_entry)
-  await db.commit()
-
+  if time_left > 0:
+    key = f"blacklist:token:{token}"
+    
+    await redis.set(name=key, value="blacklist", ex=time_left)
 
 async def create_refresh_token(user_id: uuid.UUID, db: AsyncSession):
   token = secrets.token_urlsafe(48) # random string

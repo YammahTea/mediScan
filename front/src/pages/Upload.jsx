@@ -95,9 +95,29 @@ const Upload = () => {
       setCooldownTimer(5)
       
     } catch (err) {
-      const serverError = err.response?.data?.detail;
+      let serverError = "An error occurred";
       
-      setErrorMessage(serverError || err.message);
+      // axios wraps the error message sent from the backend into a blob, sooo u have to unwrap it
+      
+      // checks if the error data is a Blob
+      if (err.response?.data instanceof Blob && err.response.data.type === "application/json") {
+        const blobText = await err.response.data.text();
+        
+        try {
+          const errorJson = JSON.parse(blobText);
+          serverError = errorJson.detail;
+        }
+        catch (e) {
+          serverError = "Failed to parse error response";
+        }
+      }
+      
+      else {
+        // if the response type wasnt a blob (eg: network error)
+        serverError = err.response?.data?.detail || err.message;
+      }
+      
+      setErrorMessage(serverError);
       setMessageType("error");
       
       setCooldownTimer(5);

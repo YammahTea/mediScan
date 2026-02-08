@@ -8,8 +8,9 @@ import jwt
 # Modules
 from Back.db.database import get_db
 from Back.db.models import User, RefreshToken
-from Back.services.auth import *
+from Back.services.auth import verify_password, hash_token, create_access_token, create_refresh_token, add_token_to_blacklist, AUTH_REFRESH_TOKEN_EXPIRE_DAYS, SECRET_KEY, ALGORITHM
 from Back.dependencies import get_current_user, oauth2_scheme
+from Back.services.redis_client import get_redis
 
 router = APIRouter(
   tags=["Authentication"]
@@ -73,21 +74,34 @@ async def login(
 
 @router.post("/logout")
 async def logout(
+        response: Response,
         user: User = Depends(get_current_user), # to avoid errors if the user is not actually logged in
         token: str = Depends(oauth2_scheme),
-        db: AsyncSession = Depends(get_db)
+        db: AsyncSession = Depends(get_db),
+        redis = Depends(get_redis)
 ):
   
   try:
     # 1- Decode just to find out when this token was supposed to expire
     payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
     expiration = payload.get("exp")
+    await add_token_to_blacklist(token, expiration, redis)
+    
     
     # 2- Blacklist the token
-    await add_token_to_blacklist(token, expiration, db)
+    await add_token_to_blacklist(token, expiration, redis)
 
   except jwt.PyJWTError:
     pass
+  
+    # 3- delete the cookie
+  response.delete_cookie(
+    key="refresh_token",
+    path="/",
+    secure=True,
+    httponly=True,
+    samesite="lax"
+  )
   
   return {"message": "Successfully logged out"}
 

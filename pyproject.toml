@@ -57,6 +57,7 @@ dependencies = [
     "dotenv",
     "pyjwt",
     "aiosqlite",
+    "redis",
 ]
 
 [[tool.uv.index]]
