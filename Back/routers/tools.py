@@ -23,8 +23,8 @@ async def merge_files(
   """
   1- Check if the number of files is valid
   2- Loop through all files and checks type and copy headers from first file
-  3- Merge the columns
-  4- Loop through the new list with the buffer
+  3- Copy data from the rows
+  4- Copy images
   5- Save the data
   """
   
