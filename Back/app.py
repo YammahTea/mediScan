@@ -5,13 +5,6 @@ from contextlib import asynccontextmanager
 # Routers
 from Back.routers import login, upload, tools
 
-from typing import List
-import numpy as np
-import cv2
-
-from PIL import Image
-import pillow_heif
-
 # Modules
 from Back.core.pipeline import load_models
 from Back.db.database import create_db_and_tables
