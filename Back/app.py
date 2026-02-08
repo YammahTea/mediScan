@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
 # Routers
-from Back.routers import login, upload
+from Back.routers import login, upload, tools
 
 from typing import List
 import numpy as np
@@ -50,3 +50,4 @@ app.add_middleware(
 # connecting routers
 app.include_router(login.router)
 app.include_router(upload.router)
+app.include_router(tools.router)

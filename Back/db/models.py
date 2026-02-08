@@ -1,5 +1,5 @@
 import uuid
-from sqlalchemy import Uuid, String, Boolean, DateTime, ForeignKey
+from sqlalchemy import Uuid, String, Boolean, DateTime, ForeignKey, Integer
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from datetime import datetime, timezone
 
@@ -27,6 +27,15 @@ class User(Base):
   
   # Used to activate/deactivate accounts
   is_active: Mapped[bool] = mapped_column(Boolean, unique=False, default=True)
+  
+  # Track number of requests to limit user
+  request_count: Mapped[int] = mapped_column(Integer, unique=False, default=0, nullable=False)
+  
+  # To check the cooldown of the user
+  last_request: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+  
+  # uncaps the limit
+  is_unlimited: Mapped[bool] = mapped_column(Boolean, unique=False, default=False, nullable=True)
   
   
 class BlacklistedToken(Base):

@@ -6,6 +6,7 @@ import easyocr
 
 from datetime import datetime
 from io import BytesIO
+from PIL import Image
 import pandas as pd
 
 # Modules
@@ -34,6 +35,22 @@ hospital_map = {
   "hanan": "مستشفى الحنان",
   "other": "Other"
 }
+
+# excel sheet configuration
+# format: ("Column name", column_width)
+excel_structure = [
+  ("المريض", 30),
+  ("تاريخ الدخول", 15),
+  ("تاريخ الخروج", 15),
+  ("ملاحظات", 15),
+  ("Age", 5),
+  ("المستشفى", 20),
+  ("Payment", 20),
+  ("Diagnosis", 25),
+  ("Expected Payment", 15),
+  ("Sticker image", 43),
+  ("File Name", 10)
+]
 
 def process_sheet(image, hunter, surgeon, reader, filename):
   final_data = []
@@ -73,9 +90,9 @@ def process_sheet(image, hunter, surgeon, reader, filename):
         "Age": "-",
         "المستشفى": hospital_map.get(hospital_name, "Other"),
         "Payment": "-", # example: cash or insurance company
-        "diagnosis": "-",
+        "Diagnosis": "-",
         "Expected Payment": "-", # expected amount to receive
-        "Sticker image": "Manual Check Required", # just a placeholder text
+        "Sticker image": "", # just a placeholder text
         "File Name": filename,
         "image_data": sticker_bytes,
       }
@@ -94,9 +111,9 @@ def process_sheet(image, hunter, surgeon, reader, filename):
       "Age": "-",
       "المستشفى": hospital_map.get(hospital_name, "Other"),
       "Payment": "-", # example: cash or insurance company
-      "diagnosis": "-",
+      "Diagnosis": "-",
       "Expected Payment": "-", # expected amount to receive
-      "Sticker image": "Not available",
+      "Sticker image": "", # or u will have text behind the image in the excel file
       "File Name": filename,
       "image_data": sticker_bytes
     }
@@ -159,23 +176,7 @@ def save_data(patient_data):
   df = pd.DataFrame(patient_data)
 
   # 2- temp df for writing text (without the "image_data")
-  # excel sheet configuration
-  # format: ("Column name", column_width)
-
-  excel_structure = [
-    ("المريض", 30),
-    ("تاريخ الدخول", 15),
-    ("تاريخ الخروج", 15),
-    ("ملاحظات", 15),
-    ("Age", 5),
-    ("المستشفى", 20),
-    ("Payment", 20),
-    ("diagnosis", 25),
-    ("Expected Payment", 15),
-    ("Sticker image", 43),
-    ("File name", 10)
-  ]
-
+  
   # Columns' name based on the excel_structure
   display_cols = [col[0] for col in excel_structure]
 
@@ -216,16 +217,37 @@ def save_data(patient_data):
 
         # insert the image
         image_stream = BytesIO(image_bytes)
-
-        worksheet.embed_image(
+        
+        # image resizing to fit the change from embed_image to insert_image
+        with Image.open(BytesIO(image_bytes)) as img:
+          # 1- calculate the new dimensions
+          target_height = 125
+          aspect_ratio = img.width / img.height
+          new_width = int(target_height * aspect_ratio)
+          
+          # 2- resize the image (look up: high quality downsampling algorithm)
+          img_resized = img.resize((new_width, target_height), Image.Resampling.LANCZOS)
+          
+          # 3- save to the new buffer
+          image_stream = BytesIO()
+          img_resized.save(image_stream, format="PNG")
+          image_stream.seek(0)
+        
+        
+        # explination:
+        # insert_image instead of embed_image because in 'embed_image'
+        # the image is literally the value of the cell
+        # and i had to change this cuz the merge endpoint when copying the image, it couldnt see the value in the cell
+        worksheet.insert_image(
           excel_row,
           img_col_index, # Sticker image column
           "sticker.png", # Dummy file name
           {
             'image_data': image_stream,
-            'x_scale': 0.5,
-            'y_scale': 0.5,
-            'object_position': 1
+            'object_position': 1,
+            'x_offset': 5,
+            'y_offset': 5
+            # no need for rescaling cuz the resizing part did it already
           }
         )
 

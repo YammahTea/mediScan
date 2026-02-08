@@ -15,7 +15,7 @@ import pillow_heif
 from Back.core.pipeline import load_models, process_sheet, save_data
 from Back.db.models import User
 from Back.db.database import get_db
-from Back.dependencies import get_current_user, oauth2_scheme
+from Back.dependencies import get_current_user, oauth2_scheme, check_rate_limit
 
 router = APIRouter(
   tags=["Upload"]
@@ -26,20 +26,24 @@ MAX_IMAGES = 5
 async def upload_sheet(
         request: Request,
         user: User = Depends(get_current_user),
-        images: List[UploadFile] = File(...)
+        images: List[UploadFile] = File(...),
+        db: AsyncSession = Depends(get_db)
 ):
   """
   1- Check if the user is active (by the get_current_user)
-  2- Load models from state
-  3- Check if provided images do not exceed the maximum number allowed
-  4- Check if image is allowed
-  5- Process each image and store all data (Read and Decode)
-  6- Save data
+  2- Check if user is limited
+  3- Load models from state
+  4- Check if provided images do not exceed the maximum number allowed
+  5- Check if image is allowed
+  6- Process each image and store all data (Read and Decode)
+  7- Save data
   """
 
 
   if len(images) > MAX_IMAGES:
     raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=f"Maximum of {MAX_IMAGES} images is allowed!")
+  
+  await check_rate_limit(user=user, db=db) # already handles errors
   
   ALLOWED_TYPES = ["image/jpeg", "image/png", "image/jpg", "image/dng", "image/heic", "image/heif"]
   

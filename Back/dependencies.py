@@ -3,6 +3,7 @@ from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from jwt import PyJWTError
+from datetime import datetime, timezone
 import jwt
 
 # Modules
@@ -11,6 +12,7 @@ from Back.db.models import User
 from Back.services.auth import is_token_blacklisted, SECRET_KEY, ALGORITHM
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
+MAX_REQUESTS = 10
 
 async def get_current_user(
         token: str = Depends(oauth2_scheme),
@@ -49,3 +51,37 @@ async def get_current_user(
     raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Inactive user")
   
   return user
+
+
+
+async def check_rate_limit(
+        user: User,
+        db: AsyncSession
+):
+  """
+  Checks if the user has reached their maximum request limits for the day
+  True -> can upload
+  False -> can NOT upload
+  
+  1- Checks for a new day
+  2- Check is not unlimited and reached max count
+  3- if none, increase request counter and update last request
+  """
+  now = datetime.now(timezone.utc)
+
+  if user.last_request is None or user.last_request.date() < now.date():
+    user.request_count = 0
+    
+  if not user.is_unlimited and user.request_count >= MAX_REQUESTS:
+    raise HTTPException(
+      status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+      detail="Daily limit reached, Please come back tomorrow."
+    )
+  
+  user.request_count += 1
+  user.last_request = now
+  
+  await db.commit()
+  await db.refresh(user)
+  
+  return True
