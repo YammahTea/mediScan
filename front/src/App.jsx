@@ -5,6 +5,7 @@ import { AuthProvider, useAuth } from "./context/AuthProvider";
 import LoginScreen from "./pages/LoginScreen";
 import Upload from './pages/Upload';
 import Profile from './pages/Profile';
+import Tools from './pages/Tools'
 
 function App() {
   return (
@@ -45,6 +46,11 @@ function AppRoutes() {
       <Route
         path="/profile"
         element={token ? <Profile /> : <Navigate to="/login" replace />}
+      />
+      
+      <Route
+        path="/tools"
+        element={token ? <Tools /> : <Navigate to="/login" replace />}
       />
       
       {/* Any route: redirects based on auth status */}

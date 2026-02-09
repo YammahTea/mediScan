@@ -6,11 +6,8 @@ import FloatingMenu from '../components/FloatingMenu';
 
 
 import api from "../api/axios.js";
-import { useAuth } from '../context/AuthProvider';
 
 const Upload = () => {
-  
-  const { logout } = useAuth();
   
   const [maxImagesCount, setMaxImagesCount] = useState(5);
   const [selectedFiles, setSelectedFiles] = useState([]);
@@ -30,108 +27,11 @@ const Upload = () => {
     }
   }, [cooldownTimer]); // used to disable components (acts like an alarm) but cant pause code exec
   
-  
-  
-  
-  
   // helper function to pause code execution (With the await)
   const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+  
 
-  const handlePost = async () => {
-    if (isSubmitting) return;
-
-    setIsSubmitting(true);
-    setErrorMessage(null);
-    setMessageType(null);
-
-    const formData = new FormData();
-    for (let i=0; i<selectedFiles.length; i++) {
-      formData.append("images", selectedFiles[i].file);
-    }
-
-    try {
-      
-      setScanningStatus("uploading"); // book animation in the modal
-      const response = await api.post("/upload", formData, {'responseType': 'blob'});
-
-      // no need for error checking in the response cuz axios does that automatically
-      
-      setScanningStatus("success"); // success animation in the modal
-      await wait(2000);
-
-      const blob = await response.data;
-      let filename = 'patients.xlsx'; // fallback
-
-      const contentDisposition = response.headers['content-disposition']; // axios uses object not like fetch, it uses functions
-      if (contentDisposition) {
-        const match = contentDisposition.match(/filename="?(.+)"?/);
-        if (match?.[1]) {
-          filename = match[1];
-        }
-      }
-
-      const url = URL.createObjectURL(blob)
-      const link = document.createElement("a");
-      link.href = url;
-      
-      link.setAttribute("download", filename);
-      document.body.appendChild(link);
-      link.click();
-      
-      // cleanup
-      
-      // clean up memory
-      link.remove();
-      window.URL.revokeObjectURL(url);
-
-      // remove all files after successful scanning
-      // memory
-      selectedFiles.forEach(fileObj => {
-        if (fileObj.preview) {
-          URL.revokeObjectURL(fileObj.preview);
-        }
-      });
-      // ui
-      setSelectedFiles([]);
-      
-      setCooldownTimer(5)
-      
-    } catch (err) {
-      let serverError = "An error occurred";
-      
-      // axios wraps the error message sent from the backend into a blob, sooo u have to unwrap it
-      
-      // checks if the error data is a Blob
-      if (err.response?.data instanceof Blob && err.response.data.type === "application/json") {
-        const blobText = await err.response.data.text();
-        
-        try {
-          const errorJson = JSON.parse(blobText);
-          serverError = errorJson.detail;
-        }
-        catch (e) {
-          serverError = "Failed to parse error response";
-        }
-      }
-      
-      else {
-        // if the response type wasnt a blob (eg: network error)
-        serverError = err.response?.data?.detail || err.message;
-      }
-      
-      setErrorMessage(serverError);
-      setMessageType("error");
-      
-      setCooldownTimer(5);
-      
-    } finally {
-      setIsSubmitting(false);
-      setScanningStatus(null);
-    }
-
-  };
-
-  // helper functions
+  // HELPER FUNCTIONS
 
   // checks for dups + remove, check max limit, creates image previews
   const handleFileChange = (e) => {
@@ -173,12 +73,14 @@ const Upload = () => {
         console.warn(`${file.name} is not a valid image file`);
         return null;
       }
-
+      
+      const isRenderable = file.type === "image/jpeg" || file.type === "image/png" || file.type === "image/webp";
+      
       try {
         return {
           file: file,
           name: file.name,
-          preview: URL.createObjectURL(file),
+          preview: isRenderable ? URL.createObjectURL(file) : null,
           isValid: true
         };
       } catch (error) {
@@ -223,7 +125,107 @@ const Upload = () => {
   }
 
   const remainingSlots = maxImagesCount - selectedFiles.length;
-
+  
+  
+  // MAIN FUNCTION
+  const handleUpload = async () => {
+    if (isSubmitting) return;
+    
+    setIsSubmitting(true);
+    setErrorMessage(null);
+    setMessageType(null);
+    
+    const formData = new FormData();
+    for (let i=0; i<selectedFiles.length; i++) {
+      formData.append("images", selectedFiles[i].file);
+    }
+    
+    try {
+      
+      setScanningStatus("uploading"); // book animation in the modal
+      const response = await api.post("/upload", formData, {'responseType': 'blob'});
+      
+      // no need for error checking in the response cuz axios does that automatically
+      
+      setScanningStatus("success"); // success animation in the modal
+      await wait(2000);
+      
+      const blob = await response.data;
+      let filename = 'patients.xlsx'; // fallback
+      
+      // find filename
+      const contentDisposition = response.headers['content-disposition']; // axios uses object not like fetch, it uses functions
+      if (contentDisposition) {
+        const match = contentDisposition.match(/filename="?(.+)"?/);
+        if (match?.[1]) {
+          filename = match[1];
+        }
+      }
+      
+      // auto download
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement("a");
+      link.href = url;
+      
+      link.setAttribute("download", filename);
+      document.body.appendChild(link);
+      link.click();
+      
+      // cleanup
+      
+      // clean up memory
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      
+      // remove all files after successful scanning
+      // memory
+      selectedFiles.forEach(fileObj => {
+        if (fileObj.preview) {
+          URL.revokeObjectURL(fileObj.preview);
+        }
+      });
+      // ui
+      setSelectedFiles([]);
+      
+      setCooldownTimer(5)
+      
+    } catch (err) {
+      let serverError = "An error occurred";
+      
+      // axios wraps the error message sent from the backend into a blob, sooo u have to unwrap it
+      
+      // checks if the error data is a Blob
+      if (err.response?.data instanceof Blob && err.response.data.type === "application/json") {
+        const blobText = await err.response.data.text();
+        
+        try {
+          const errorJson = JSON.parse(blobText);
+          serverError = errorJson.detail;
+        }
+        catch (e) {
+          serverError = "Failed to parse error response";
+        }
+      }
+      
+      else {
+        // if the response type wasnt a blob (eg: network error)
+        serverError = err.response?.data?.detail || err.message;
+      }
+      
+      setErrorMessage(serverError);
+      setMessageType("error");
+      
+      setCooldownTimer(5);
+      
+    } finally {
+      setIsSubmitting(false);
+      setScanningStatus(null);
+    }
+    
+  };
+  
+  
+  
   return (
     
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-8">
@@ -271,7 +273,7 @@ const Upload = () => {
           </div>
           <input
             type="file"
-            accept="image/*"
+            accept="image/*, .heic, .heif, .dng, .jpg, .jpeg, .png"
             multiple
             id="file-input"
             className="hidden"
@@ -302,7 +304,7 @@ const Upload = () => {
         {/* SCAN button */}
         <button
           type="button"
-          onClick={handlePost}
+          onClick={handleUpload}
           className="w-full text-center cursor-pointer bg-blue-900 mt-5 hover:bg-[#0d2559] transition-colors duration-500 shadow-[0px_4px_32px_0_rgba(99,102,241,.70)] px-6 py-3 rounded-xl border border-slate-500 text-white font-medium group disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none"
           disabled={selectedFiles.length > maxImagesCount || selectedFiles.length === 0}
         >
