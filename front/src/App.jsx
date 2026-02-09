@@ -4,7 +4,7 @@ import { AuthProvider, useAuth } from "./context/AuthProvider";
 // Pages
 import LoginScreen from "./pages/LoginScreen";
 import Upload from './pages/Upload';
-
+import Profile from './pages/Profile';
 
 function App() {
   return (
@@ -39,6 +39,12 @@ function AppRoutes() {
       <Route
         path="/upload"
         element={token ? <Upload /> : <Navigate to="/login" replace />}
+      />
+      
+      {/* PROFILE ROUTE: If NOT logged in, goes back to /login */}
+      <Route
+        path="/profile"
+        element={token ? <Profile /> : <Navigate to="/login" replace />}
       />
       
       {/* Any route: redirects based on auth status */}

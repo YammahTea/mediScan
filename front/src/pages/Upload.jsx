@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 
 import LoaderModal from "../components/LoaderModal.jsx"
 import Toast from "../components/Toast.jsx"
+import FloatingMenu from '../components/FloatingMenu';
+
 
 import api from "../api/axios.js";
 import { useAuth } from '../context/AuthProvider';
@@ -231,6 +233,12 @@ const Upload = () => {
         status={scanningStatus}
       />
       
+      {/*So it doesnt appear while scanning */}
+      {!isSubmitting &&
+        <FloatingMenu/>
+      }
+      
+      
       {errorMessage &&
         <Toast
         message={errorMessage}
@@ -348,12 +356,6 @@ const Upload = () => {
         )}
       
       </form>
-      <button type="button"
-              className="underline text-red-600 cursor-pointer"
-              onClick={logout}
-      >
-        Logout
-      </button>
       
     </div>
     
