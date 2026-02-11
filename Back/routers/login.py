@@ -64,7 +64,7 @@ async def login(
     value=refresh_token,
     httponly=True,
     secure=True,
-    samesite="lax",
+    samesite="none", # changed from lax, because i kept having issues between vercel and modal
     max_age=AUTH_REFRESH_TOKEN_EXPIRE_DAYS * 86400,
     path="/",
   )

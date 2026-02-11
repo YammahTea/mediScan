@@ -34,7 +34,7 @@ app = FastAPI(lifespan=lifespan)
 origins = [
   "http://localhost:5173", # for local testing (yes i will add the frontend url when i host it)
   "http://127.0.0.1:5173", # cuz the browser deals with localhost but the backend sets the cookie in this domain...
-  "https://mediscan-dun.vercel.app" # frontend url :)
+  "https://mediscan-dun.vercel.app", # frontend url :)
   "https://mediscan-dun.vercel.app/"
 ]
 
