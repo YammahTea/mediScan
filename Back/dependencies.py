@@ -70,6 +70,7 @@ async def check_rate_limit(
   3- if none, increase request counter and update last request
   """
   now = datetime.now(timezone.utc)
+  now_tz = now.replace(tzinfo=None)
 
   if user.last_request is None or user.last_request.date() < now.date():
     user.request_count = 0
@@ -81,7 +82,7 @@ async def check_rate_limit(
     )
   
   user.request_count += 1
-  user.last_request = now
+  user.last_request = now_tz
   
   await db.commit()
   await db.refresh(user)
