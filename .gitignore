@@ -30,6 +30,10 @@ scribe_data.yaml
 
 # to create admin user
 create_admin.py
+deploy_users.py
 
 # test db
 mediScan.db
+
+#modal config
+modal_app.py

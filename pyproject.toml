@@ -58,6 +58,7 @@ dependencies = [
     "pyjwt",
     "aiosqlite",
     "redis",
+    "sqladmin[full]",
 ]
 
 [[tool.uv.index]]

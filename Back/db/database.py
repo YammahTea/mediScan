@@ -4,7 +4,14 @@ from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 # Modules
 from Back.db.models import Base
 
-DB_URL = "sqlite+aiosqlite:///./mediScan.db" # local db for testing (TO DO: connect to postgres)
+
+DB_URL = os.getenv("DATABASE_URL", "sqlite+aiosqlite:///./mediScan.db")
+
+if DB_URL.startswith("postgres://"):
+  DB_URL = DB_URL.replace("postgres://", "postgresql+asyncpg://", 1)
+
+elif DB_URL.startswith("postgresql://") and "+asyncpg" not in DB_URL:
+  DB_URL = DB_URL.replace("postgresql://", "postgresql+asyncpg://", 1)
 
 print(f"Connecting to Database: {DB_URL.split('@')[-1]}")
 

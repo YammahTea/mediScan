@@ -78,11 +78,12 @@ async def add_token_to_blacklist(token: str, expiration: float, redis):
 async def create_refresh_token(user_id: uuid.UUID, db: AsyncSession):
   token = secrets.token_urlsafe(48) # random string
   expire = datetime.now(timezone.utc) + timedelta(days=AUTH_REFRESH_TOKEN_EXPIRE_DAYS)
+  expire_naive = expire.replace(tzinfo=None) # cuz supabase kept complaining about it -_-
   
   db_refresh = RefreshToken(
     user_id=user_id,
     hashed_token=hash_token(token),
-    expires_at=expire,
+    expires_at=expire_naive,
     revoked=False
   )
   

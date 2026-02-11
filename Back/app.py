@@ -2,6 +2,11 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
+# For admin panel
+from sqladmin import Admin, ModelView
+from Back.db.database import engine
+from Back.db.models import User
+
 # Routers
 from Back.routers import login, upload, tools, profile
 
@@ -45,3 +50,18 @@ app.include_router(login.router)
 app.include_router(upload.router)
 app.include_router(profile.router)
 app.include_router(tools.router)
+
+#  ADMIN PANEL SETUP
+class UserAdmin(ModelView, model=User):
+  column_list = [User.id, User.username, User.email, User.is_unlimited, User.is_active, User.request_count, User.last_request, User.is_verified]
+  
+  can_create = True
+  can_edit = True
+  can_delete = True
+  
+  icon = "fa-solid fa-user"
+
+# This adds the /admin route
+authentication_backend = None
+admin = Admin(app, engine)
+admin.add_view(UserAdmin)
