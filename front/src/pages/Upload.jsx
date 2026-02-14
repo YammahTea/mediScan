@@ -7,6 +7,26 @@ import FloatingMenu from '../components/FloatingMenu';
 
 import api from "../api/axios.js";
 
+
+const UploadIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="80px" height="80px">
+    <path
+      fill="#1e3a5f"
+      d="M14 2H6c-.53 0-1.04.21-1.41.59C4.21 2.96 4 3.47 4 4v16c0 .53.21 1.04.59 1.41.37.38.88.59 1.41.59h12c.53 0 1.04-.21 1.41-.59.38-.37.59-.88.59-1.41V8l-6-6z"
+    />
+    <path
+      fill="#8b9dc3"
+      d="M14 2v4c0 .53.21 1.04.59 1.41.37.38.88.59 1.41.59h4l-6-6z"
+    />
+    <rect x="8" y="11" width="8" height="6" fill="#fff" rx="0.5"/>
+    <path
+      fill="#1e3a5f"
+      d="M9.5 15.5l1.5-2 1.5 1.5 2-3 1.5 3.5H9.5z"
+    />
+    <circle cx="10.5" cy="13" r="0.8" fill="#1e3a5f"/>
+  </svg>
+);
+
 const Upload = () => {
   
   const [maxImagesCount, setMaxImagesCount] = useState(5);
@@ -262,11 +282,7 @@ const Upload = () => {
           className="bg-[#fafbff] relative flex flex-col justify-center items-center py-10 px-6 mt-[2.1875rem] rounded-xl border-2 border-dashed border-[rgb(100,149,237)] cursor-pointer transition-all duration-300 hover:bg-[rgba(100,149,237,0.05)] hover:border-[rgb(65,105,225)] hover:shadow-[0_4px_12px_rgba(100,149,237,0.15)]"
         >
           <div className="flex flex-col items-center gap-2.5 pointer-events-none">
-            <img
-              alt="File Icon"
-              className="w-16 h-16 mb-2 opacity-90"
-              src="../icon/img.png"
-            />
+            <UploadIcon/>
             <span className="text-[#555] text-base font-semibold text-center">
               Drag & drop your files here
             </span>

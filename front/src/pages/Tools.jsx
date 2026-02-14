@@ -7,19 +7,35 @@ import api from "../api/axios.js";
 
 // icons
 const ExcelIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="40px" height="40px">
-    <path fill="#4CAF50" d="M41,10H25v28h16c0.553,0,1-0.447,1-1V11C42,10.447,41.553,10,41,10z"/>
-    <path fill="#FFF" d="M32 15H39V18H32zM32 25H39V28H32zM32 35H39V38H32zM24 43L4 43 4 5 24 5z"/>
-    <path fill="#FFF" d="M21 11.5L17 18 13 11.5 11 11.5 16 19.5 11 27.5 13 27.5 17 21 21 27.5 23 27.5 18 19.5 23 11.5z"/>
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="30" height="30px">
+    <path
+      fill="#22c55e"
+      d="M14 2H6c-.53 0-1.04.21-1.41.59C4.21 2.96 4 3.47 4 4v16c0 .53.21 1.04.59 1.41.37.38.88.59 1.41.59h12c.53 0 1.04-.21 1.41-.59.38-.37.59-.88.59-1.41V8l-6-6z"
+    />
+    <path
+      fill="#86efac"
+      d="M14 2v4c0 .53.21 1.04.59 1.41.37.38.88.59 1.41.59h4l-6-6z"
+    />
+    <text
+      x="12"
+      y="16"
+      fontSize="5"
+      fontWeight="600"
+      textAnchor="middle"
+      fill="#fff"
+      fontFamily="system-ui, -apple-system, sans-serif"
+    >
+      XLS
+    </text>
   </svg>
 );
 
 const FileStackIcon = () => (
-  <svg className="w-12 h-12 text-gray-400 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="60px" height="60px" fill="#1e3a5f">
+    <path d="M21 8h2v14H7v-2h1v1h14V9h-1zm-1 11V5h-2v1h1v12H5v-1H4v2zM1 16V2h16v14zm9-1v-2H5v2zm0-8H5v2h5zm-5 3v2h5v-2zm11 3h-5v2h5zm0-3h-5v2h5zm0-3h-5v2h5zM2 6h14V3H2zm0 3h2V7H2zm0 3h2v-2H2zm0 3h2v-2H2z"/>
+    <path fill="none" d="M0 0h24v24H0z"/>
   </svg>
-  
-  
+
 );
 
 const Tools = () => {
