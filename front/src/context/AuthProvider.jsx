@@ -44,12 +44,12 @@ export const AuthProvider = ({ children }) => {
         const originalRequest = error.config;
         
         // unauthorized and didnt do refresh yet
-        if (error.response?.status === 401 && !originalRequest._retry && !originalRequest.url.includes('/refresh') ) {
+        if (error.response?.status === 401 && !originalRequest._retry && !originalRequest.url.includes('/auth/refresh') ) {
           originalRequest._retry = true; // so it doesnt do an infinite loop
           
           try {
             
-            const response = await api.post("/refresh");
+            const response = await api.post("/auth/refresh");
             
             // 1- get the new access token
             const newAccessToken = response.data.access_token
@@ -87,7 +87,7 @@ export const AuthProvider = ({ children }) => {
     const persistLogin = async () => {
     
       try {
-        const response = await api.post("/refresh");
+        const response = await api.post("/auth/refresh");
         setToken(response.data.access_token);
         
       } catch (err) {
@@ -112,7 +112,7 @@ export const AuthProvider = ({ children }) => {
     formData.append('password', password);
     
     // No need for a try/catch here cuz the UI to handles the error
-    const response = await api.post('/login', formData);
+    const response = await api.post('/auth/login', formData);
     
     // Set the token (this triggers a re-render)
     setToken(response.data.access_token);
@@ -121,7 +121,7 @@ export const AuthProvider = ({ children }) => {
   // 4- logout function
   const logout = async () => {
     try {
-      await api.post('/logout');
+      await api.post('/auth/logout');
     } catch (err) {
       console.error(err);
     } finally {
