@@ -8,6 +8,7 @@ import os
 
 # Modules
 from Back.db.database import get_db
+from Back.services.redis_client import get_redis
 
 router = APIRouter(
   tags=["DevOps"]
@@ -19,7 +20,8 @@ load_dotenv()
 @router.get("/keep-alive")
 async def keep_alive(
         x_keep_alive_token: str = Header(None),
-        db: AsyncSession = Depends(get_db)
+        db: AsyncSession = Depends(get_db),
+        redis_client = Depends(get_redis)
 ):
   
   expected_token = os.getenv("KEEP_ALIVE_TOKEN")
@@ -29,11 +31,13 @@ async def keep_alive(
     raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,
                         detail="Forbidden")
   
-  # if it isn't, it pokes the db to keep a connection opened
-  
+  # if it isn't, it pokes the db to keep a connection opened and ping redis client
   try:
     await db.execute(text("SELECT 1"))
-    return {"status": "success", "message": "Supabase is awake"}
+    
+    await redis_client.ping()
+    
+    return {"status": "success", "message": "Supabase and Redis are awake"}
   
   except Exception as e:
-    raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Database ping failed")
+    raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Database ping or redis failed")
