@@ -12,10 +12,11 @@ import openpyxl
 from Back.services.rate_limiter import check_user_cooldown
 
 router = APIRouter(
+  prefix="/tools",
   tags=["Tools"]
 )
 
-@router.post("/tools/merge")
+@router.post("/merge")
 async def merge_files(
         files: List[UploadFile] = File(...),
         cooldown: bool = Depends(check_user_cooldown),
@@ -140,4 +141,4 @@ async def merge_files(
     )
   
   except Exception as e:
-    raise HTTPException(status_code=500, detail="Failed to merge files.")
+    raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to merge files.")

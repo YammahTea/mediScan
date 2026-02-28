@@ -13,6 +13,7 @@ from Back.dependencies import get_current_user, oauth2_scheme
 from Back.services.redis_client import get_redis
 
 router = APIRouter(
+  prefix="/auth",
   tags=["Authentication"]
 )
 
